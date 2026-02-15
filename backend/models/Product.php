@@ -165,7 +165,6 @@ class Product {
         return $stmt->execute();
     }
 
-    // Atualizar rating do produto
     public function updateRating($id, $rating, $reviews_count) {
         $query = "UPDATE " . $this->table_name . " 
                   SET rating = :rating, reviews_count = :reviews_count, updated_at = NOW()
