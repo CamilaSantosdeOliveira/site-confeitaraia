@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doçuras & Sabores - Confeitaria Mobile</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/x-icon" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTYiIGN5PSIxNiIgcj0iMTYiIGZpbGw9IiNlOTFlNjMiLz4KPHR2ZyB4PSI4IiB5PSI4IiB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0id2hpdGUiPgo8cGF0aCBkPSJNMTIgMkM2LjQ4IDIgMiA2LjQ4IDIgMTJzNC40OCAxMCAxMCAxMCAxMC00LjQ4IDEwLTEwUzE3LjUyIDIgMTIgMnptMCAxOGMtNC40MiAwLTgtMy41OC04LThzMy41OC04IDgtOCA4IDMuNTggOCA4LTMuNTggOC04IDh6Ii8+Cjwvc3ZnPgo8L3N2Zz4K">
+    <meta name="theme-color" content="#e91e63">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Doçuras & Sabores">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="Doçuras & Sabores">
+    <meta name="msapplication-TileColor" content="#e91e63">
+    <meta name="msapplication-navbutton-color" content="#e91e63">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #e91e63, #ad1457);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            text-align: center;
+            overflow: hidden;
+        }
+        
+        .container {
+            max-width: 400px;
+            width: 100%;
+            animation: fadeIn 0.8s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .logo {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
+        }
+        
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+        }
+        
+        .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            margin-bottom: 2rem;
+        }
+        
+        .install-section {
+            background: rgba(255,255,255,0.1);
+            padding: 2rem;
+            border-radius: 20px;
+            margin: 2rem 0;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .install-btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 0.5rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
+            animation: pulse 2s infinite;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .install-btn:hover, .install-btn:active {
+            background: #45a049;
+            transform: scale(0.98);
+        }
+        
+        .status {
+            font-size: 0.9rem;
+            margin: 1rem 0;
+            padding: 1rem;
+            background: rgba(0,0,0,0.2);
+            border-radius: 10px;
+        }
+        
+        .debug-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            margin: 0.5rem;
+            transition: all 0.3s ease;
+        }
+        
+        .debug-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        .success {
+            background: #4CAF50 !important;
+            animation: celebration 0.6s ease;
+        }
+        
+        @keyframes celebration {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            padding: 20px;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .modal-content {
+            background: white;
+            color: #333;
+            padding: 2rem;
+            border-radius: 15px;
+            max-width: 400px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+            text-align: left;
+            line-height: 1.6;
+        }
+        
+        .modal h2 {
+            color: #e91e63;
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+        
+        .modal .close-btn {
+            background: #e91e63;
+            color: white;
+            border: none;
+            padding: 1rem;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">🍰</div>
+        <h1>Doçuras & Sabores</h1>
+        <p class="subtitle">Confeitaria Artesanal</p>
+        
+        <div class="install-section">
+            <div id="statusDisplay" class="status">
+                🔄 Verificando compatibilidade...
+            </div>
+            
+            <button id="installBtn" class="install-btn hidden">
+                📱 Instalar App Grátis
+            </button>
+            
+            <button id="instructionsBtn" class="debug-btn">
+                📋 Como Instalar
+            </button>
+            
+            <button id="debugBtn" class="debug-btn">
+                🔧 Debug Info
+            </button>
+        </div>
+        
+        <div id="whatsappBtn" style="
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #25D366;
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 50%;
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(37, 211, 102, 0.4);
+            z-index: 1000;
+        " onclick="window.open('https://wa.me/5511999999999?text=Olá! Gostaria de fazer um pedido na Doçuras & Sabores!', '_blank')">
+            💬
+        </div>
+    </div>
+
+    <script>
+        let deferredPrompt = null;
+        let isInstalled = false;
+        let installAttempts = 0;
+        
+        // Detectar informações do dispositivo
+        function getDeviceInfo() {
+            const userAgent = navigator.userAgent;
+            const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
+            const isAndroid = /Android/i.test(userAgent);
+            const isIOS = /iPhone|iPad|iPod/.test(userAgent);
+            const isChrome = /Chrome/i.test(userAgent) && !/Edg/i.test(userAgent);
+            const isSafari = /Safari/i.test(userAgent) && !/Chrome/i.test(userAgent);
+            const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+            const screenWidth = window.innerWidth;
+            const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+            
+            return {
+                userAgent,
+                isMobile,
+                isAndroid,
+                isIOS,
+                isChrome,
+                isSafari,
+                hasTouch,
+                screenWidth,
+                isStandalone,
+                isPWACapable: 'serviceWorker' in navigator && 'PushManager' in window
+            };
+        }
+        
+        // Atualizar status na tela
+        function updateStatus(message, type = 'info') {
+            const statusEl = document.getElementById('statusDisplay');
+            const icons = {
+                info: '💡',
+                success: '✅',
+                warning: '⚠️',
+                error: '❌',
+                mobile: '📱',
+                desktop: '💻'
+            };
+            
+            statusEl.innerHTML = `${icons[type]} ${message}`;
+            
+            if (type === 'success') {
+                statusEl.classList.add('success');
+            }
+        }
+        
+        // Verificar se já está instalado
+        function checkInstallation() {
+            const device = getDeviceInfo();
+            
+            if (device.isStandalone) {
+                isInstalled = true;
+                updateStatus('App já está instalado! 🎉', 'success');
+                document.getElementById('installBtn').classList.add('hidden');
+                return true;
+            }
+            return false;
+        }
+        
+        // Event listener para beforeinstallprompt
+        window.addEventListener('beforeinstallprompt', (e) => {
+            console.log('🎯 beforeinstallprompt capturado!');
+            e.preventDefault();
+            deferredPrompt = e;
+            
+            updateStatus('Pronto para instalar!', 'success');
+            document.getElementById('installBtn').classList.remove('hidden');
+        });
+        
+        // Função de instalação
+        async function installApp() {
+            installAttempts++;
+            console.log(`🚀 Tentativa de instalação #${installAttempts}`);
+            
+            if (deferredPrompt) {
+                try {
+                    updateStatus('Iniciando instalação...', 'info');
+                    
+                    const result = await deferredPrompt.prompt();
+                    console.log('📱 Prompt mostrado:', result);
+                    
+                    const { outcome } = await deferredPrompt.userChoice;
+                    console.log('👤 Escolha do usuário:', outcome);
+                    
+                    if (outcome === 'accepted') {
+                        updateStatus('App instalado com sucesso! 🎉', 'success');
+                        document.getElementById('installBtn').classList.add('hidden');
+                    } else {
+                        updateStatus('Instalação cancelada pelo usuário', 'warning');
+                    }
+                    
+                    deferredPrompt = null;
+                } catch (error) {
+                    console.error('❌ Erro na instalação:', error);
+                    updateStatus('Erro na instalação. Veja as instruções.', 'error');
+                    showInstructions();
+                }
+            } else {
+                console.log('📋 Sem prompt nativo, mostrando instruções');
+                showInstructions();
+            }
+        }
+        
+        // Mostrar instruções específicas
+        function showInstructions() {
+            const device = getDeviceInfo();
+            let instructions = '';
+            
+            if (device.isIOS && device.isSafari) {
+                instructions = `
+                    <h2>🍎 iPhone/iPad - Safari</h2>
+                    <p><strong>Passo a passo:</strong></p>
+                    <ol>
+                        <li>Toque no botão <strong>COMPARTILHAR</strong> (⬆️) na parte inferior da tela</li>
+                        <li>Role para baixo até encontrar <strong>"Adicionar à Tela de Início"</strong></li>
+                        <li>Toque em <strong>"Adicionar à Tela de Início"</strong></li>
+                        <li>Confirme tocando em <strong>"Adicionar"</strong></li>
+                    </ol>
+                    <p>✅ O app "Doçuras & Sabores" aparecerá na sua tela inicial!</p>
+                    <p><em>💡 Dica: Se não vir o botão ⬆️, toque na barra de endereço do navegador primeiro.</em></p>
+                `;
+            } else if (device.isAndroid && device.isChrome) {
+                instructions = `
+                    <h2>🤖 Android - Chrome</h2>
+                    <p><strong>Passo a passo:</strong></p>
+                    <ol>
+                        <li>Toque nos <strong>3 pontinhos</strong> (⋮) no canto superior direito</li>
+                        <li>Procure por <strong>"Adicionar à tela inicial"</strong> ou <strong>"Instalar app"</strong></li>
+                        <li>Toque em <strong>"Adicionar à tela inicial"</strong></li>
+                        <li>Confirme tocando em <strong>"Adicionar"</strong></li>
+                    </ol>
+                    <p>✅ O app será instalado automaticamente!</p>
+                    <p><em>💡 Dica: Se não aparecer a opção, recarregue a página e tente novamente.</em></p>
+                `;
+            } else if (device.isAndroid) {
+                instructions = `
+                    <h2>📱 Android - Navegador Genérico</h2>
+                    <p><strong>Instruções gerais:</strong></p>
+                    <ol>
+                        <li>Procure o <strong>menu</strong> do navegador (⋮ ou ☰)</li>
+                        <li>Encontre uma opção como:</li>
+                        <ul>
+                            <li>"Adicionar à tela inicial"</li>
+                            <li>"Instalar app"</li>
+                            <li>"Criar atalho"</li>
+                        </ul>
+                        <li>Confirme a instalação</li>
+                    </ol>
+                    <p>💡 <strong>Recomendação:</strong> Use o Google Chrome para melhor experiência PWA!</p>
+                `;
+            } else {
+                instructions = `
+                    <h2>💻 Desktop / Outros</h2>
+                    <p><strong>Como instalar:</strong></p>
+                    <ol>
+                        <li>Use o <strong>Google Chrome</strong> ou <strong>Microsoft Edge</strong></li>
+                        <li>Procure pelo ícone de <strong>instalação</strong> na barra de endereços</li>
+                        <li>Ou use o menu do navegador e procure por "Instalar app"</li>
+                    </ol>
+                    <p>📱 <strong>Para mobile:</strong> Acesse este site no seu celular para instalar como app!</p>
+                `;
+            }
+            
+            showModal(instructions);
+        }
+        
+        // Mostrar debug info
+        function showDebugInfo() {
+            const device = getDeviceInfo();
+            const debugHTML = `
+                <h2>🔧 Informações Técnicas</h2>
+                <p><strong>Dispositivo:</strong> ${device.isMobile ? '📱 Mobile' : '💻 Desktop'}</p>
+                <p><strong>Sistema:</strong> ${device.isAndroid ? 'Android' : device.isIOS ? 'iOS' : 'Outro'}</p>
+                <p><strong>Navegador:</strong> ${device.isChrome ? 'Chrome' : device.isSafari ? 'Safari' : 'Outro'}</p>
+                <p><strong>Touch:</strong> ${device.hasTouch ? '✅ Sim' : '❌ Não'}</p>
+                <p><strong>Tela:</strong> ${device.screenWidth}px de largura</p>
+                <p><strong>PWA Capaz:</strong> ${device.isPWACapable ? '✅ Sim' : '❌ Não'}</p>
+                <p><strong>Standalone:</strong> ${device.isStandalone ? '✅ Sim' : '❌ Não'}</p>
+                <p><strong>Prompt Disponível:</strong> ${deferredPrompt ? '✅ Sim' : '❌ Não'}</p>
+                <p><strong>Tentativas:</strong> ${installAttempts}</p>
+                <hr>
+                <p><small><strong>User Agent:</strong><br>${device.userAgent}</small></p>
+            `;
+            
+            showModal(debugHTML);
+        }
+        
+        // Mostrar modal
+        function showModal(content) {
+            const modal = document.createElement('div');
+            modal.className = 'modal';
+            modal.innerHTML = `
+                <div class="modal-content">
+                    ${content}
+                    <button class="close-btn" onclick="this.closest('.modal').remove()">
+                        ✅ Entendi!
+                    </button>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            // Fechar ao clicar fora
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.remove();
+                }
+            });
+        }
+        
+        // Event listeners
+        document.getElementById('installBtn').addEventListener('click', installApp);
+        document.getElementById('instructionsBtn').addEventListener('click', showInstructions);
+        document.getElementById('debugBtn').addEventListener('click', showDebugInfo);
+        
+        // Registrar service worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('service-worker.js')
+                .then(registration => {
+                    console.log('✅ Service Worker registrado:', registration);
+                })
+                .catch(error => {
+                    console.log('❌ Falha no Service Worker:', error);
+                });
+        }
+        
+        // Inicialização
+        window.addEventListener('load', () => {
+            const device = getDeviceInfo();
+            
+            // Verificar se já está instalado
+            if (checkInstallation()) {
+                return;
+            }
+            
+            // Mostrar status inicial
+            if (device.isMobile) {
+                updateStatus('📱 Mobile detectado. Aguardando prompt de instalação...', 'mobile');
+            } else {
+                updateStatus('💻 Desktop detectado. PWA disponível!', 'desktop');
+            }
+            
+            // Sistema de fallback - mostrar botão após timeout
+            setTimeout(() => {
+                if (!deferredPrompt && !isInstalled) {
+                    console.log('⏰ Timeout: Forçando exibição do botão');
+                    document.getElementById('installBtn').classList.remove('hidden');
+                    
+                    if (device.isMobile) {
+                        updateStatus('📱 Toque no botão para ver instruções de instalação', 'warning');
+                    } else {
+                        updateStatus('💻 Clique no botão para instalar ou ver instruções', 'info');
+                    }
+                }
+            }, 3000);
+            
+            // Sistema agressivo para mobile
+            if (device.isMobile) {
+                setTimeout(() => {
+                    if (!isInstalled && !deferredPrompt) {
+                        console.log('🚀 Sistema agressivo: Forçando instalação mobile');
+                        document.getElementById('installBtn').classList.remove('hidden');
+                        updateStatus('📱 Pronto para instalar! Toque no botão abaixo', 'success');
+                        
+                        // Animar o botão para chamar atenção
+                        const btn = document.getElementById('installBtn');
+                        btn.style.animation = 'pulse 1s infinite';
+                    }
+                }, 1000);
+            }
+        });
+        
+        // Detectar mudanças de orientação/resize
+        window.addEventListener('resize', () => {
+            setTimeout(() => {
+                if (!checkInstallation()) {
+                    const device = getDeviceInfo();
+                    updateStatus(device.isMobile ? '📱 Mobile' : '💻 Desktop', device.isMobile ? 'mobile' : 'desktop');
+                }
+            }, 300);
+        });
+        
+        // Detectar quando o app é instalado
+        window.addEventListener('appinstalled', (e) => {
+            console.log('🎉 App foi instalado!');
+            updateStatus('App instalado com sucesso! 🎉', 'success');
+            document.getElementById('installBtn').classList.add('hidden');
+        });
+    </script>
+</body>
+</html>

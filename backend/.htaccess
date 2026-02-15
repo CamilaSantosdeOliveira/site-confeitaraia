@@ -1,0 +1,102 @@
+RewriteEngine On
+
+# Permitir CORS
+Header always set Access-Control-Allow-Origin "*"
+Header always set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+Header always set Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With"
+
+# Responder a requisições OPTIONS
+RewriteCond %{REQUEST_METHOD} OPTIONS
+RewriteRule ^(.*)$ $1 [R=200,L]
+
+# Roteamento da API
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# Rotas da API
+RewriteRule ^api/products/?$ api/products.php [QSA,L]
+RewriteRule ^api/products/([0-9]+)/?$ api/products.php [QSA,L]
+RewriteRule ^api/products/category/([^/]+)/?$ api/products.php [QSA,L]
+RewriteRule ^api/products/search/?$ api/products.php [QSA,L]
+RewriteRule ^api/products/featured/?$ api/products.php [QSA,L]
+
+# Rotas de autenticação
+RewriteRule ^api/auth/login/?$ api/auth/login.php [QSA,L]
+RewriteRule ^api/auth/register/?$ api/auth/register.php [QSA,L]
+RewriteRule ^api/auth/me/?$ api/auth/me.php [QSA,L]
+
+# Rotas de pedidos
+RewriteRule ^api/orders/?$ api/orders.php [QSA,L]
+RewriteRule ^api/orders/([0-9]+)/?$ api/orders.php [QSA,L]
+
+# Rotas administrativas
+RewriteRule ^api/admin/products/?$ api/admin/products.php [QSA,L]
+RewriteRule ^api/admin/orders/?$ api/admin/orders.php [QSA,L]
+RewriteRule ^api/admin/stats/?$ api/admin/stats.php [QSA,L]
+
+# Configurações de segurança
+<Files "*.php">
+    # Desabilitar listagem de diretórios
+    Options -Indexes
+    
+    # Configurações de segurança
+    <IfModule mod_headers.c>
+        Header always set X-Content-Type-Options nosniff
+        Header always set X-Frame-Options DENY
+        Header always set X-XSS-Protection "1; mode=block"
+        Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    </IfModule>
+</Files>
+
+# Proteger arquivos sensíveis
+<Files "*.sql">
+    Order allow,deny
+    Deny from all
+</Files>
+
+<Files "*.log">
+    Order allow,deny
+    Deny from all
+</Files>
+
+# Configurações de cache
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType text/css "access plus 1 month"
+    ExpiresByType application/javascript "access plus 1 month"
+    ExpiresByType image/png "access plus 1 month"
+    ExpiresByType image/jpg "access plus 1 month"
+    ExpiresByType image/jpeg "access plus 1 month"
+    ExpiresByType image/gif "access plus 1 month"
+    ExpiresByType image/svg+xml "access plus 1 month"
+</IfModule>
+
+# Compressão GZIP
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/plain
+    AddOutputFilterByType DEFLATE text/html
+    AddOutputFilterByType DEFLATE text/xml
+    AddOutputFilterByType DEFLATE text/css
+    AddOutputFilterByType DEFLATE application/xml
+    AddOutputFilterByType DEFLATE application/xhtml+xml
+    AddOutputFilterByType DEFLATE application/rss+xml
+    AddOutputFilterByType DEFLATE application/javascript
+    AddOutputFilterByType DEFLATE application/x-javascript
+    AddOutputFilterByType DEFLATE application/json
+</IfModule>
+
+# Configurações de erro
+ErrorDocument 404 /api/error/404.php
+ErrorDocument 500 /api/error/500.php
+
+
+
+
+
+
+
+
+
+
+
+

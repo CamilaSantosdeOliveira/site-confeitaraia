@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doçuras & Sabores - Confeitaria Artesanal</title>
+    <meta name="description" content="Confeitaria artesanal em São Paulo. Bolos, doces e sobremesas feitas com amor.">
+    
+    <!-- Fontes -->
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;700&family=Montserrat:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        /* Reset e Base */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Montserrat', sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        /* Header */
+        .header {
+            background: #8E24AA;
+            padding: 1rem 0;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            font-family: 'Dancing Script', cursive;
+            font-size: 2rem;
+            color: white;
+            text-decoration: none;
+            font-weight: 700;
+        }
+        
+        .nav-menu {
+            display: flex;
+            list-style: none;
+            gap: 2rem;
+        }
+        
+        .nav-menu a {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+        
+        .nav-menu a:hover {
+            color: #F8BBD9;
+        }
+        
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(rgba(233, 30, 99, 0.8), rgba(233, 30, 99, 0.8)),
+                        url('https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=1200&h=800&fit=crop&q=80');
+            background-size: cover;
+            background-position: center;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: white;
+            padding-top: 80px;
+        }
+        
+        .hero h1 {
+            font-family: 'Dancing Script', cursive;
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+        
+        .hero p {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            max-width: 600px;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 12px 30px;
+            background: #E91E63;
+            color: white;
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .btn:hover {
+            background: #AD1457;
+            transform: translateY(-2px);
+        }
+        
+        /* Sections */
+        section {
+            padding: 80px 0;
+        }
+        
+        h2 {
+            font-family: 'Dancing Script', cursive;
+            font-size: 3rem;
+            text-align: center;
+            margin-bottom: 3rem;
+            color: #AD1457;
+        }
+        
+        /* Cardápio */
+        .cardapio {
+            background: #FDF2F8;
+        }
+        
+        .produtos-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+        
+        .produto-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            overflow: hidden;
+            transition: transform 0.3s;
+        }
+        
+        .produto-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .produto-card img {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+        }
+        
+        .produto-info {
+            padding: 1.5rem;
+            text-align: center;
+        }
+        
+        .produto-info h3 {
+            font-family: 'Dancing Script', cursive;
+            font-size: 1.8rem;
+            color: #E91E63;
+            margin-bottom: 0.5rem;
+        }
+        
+        .produto-info p {
+            color: #666;
+            margin-bottom: 1rem;
+        }
+        
+        .preco {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #AD1457;
+            margin-bottom: 1rem;
+        }
+        
+        /* Sobre */
+        .sobre {
+            text-align: center;
+        }
+        
+        .sobre p {
+            font-size: 1.1rem;
+            max-width: 800px;
+            margin: 0 auto 2rem;
+            color: #666;
+        }
+        
+        /* Depoimentos */
+        .depoimentos {
+            background: #FDF2F8;
+        }
+        
+        .depoimentos-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+        
+        .depoimento {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        
+        .depoimento p {
+            font-style: italic;
+            margin-bottom: 1rem;
+            color: #666;
+        }
+        
+        .autor {
+            font-weight: 600;
+            color: #E91E63;
+        }
+        
+        /* Contato */
+        .contato {
+            text-align: center;
+        }
+        
+        .contato-opcoes {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            flex-wrap: wrap;
+            margin-top: 2rem;
+        }
+        
+        .btn-whatsapp {
+            background: #25D366;
+        }
+        
+        .btn-whatsapp:hover {
+            background: #128C7E;
+        }
+        
+        .btn-phone {
+            background: #6c757d;
+        }
+        
+        .btn-phone:hover {
+            background: #5a6268;
+        }
+        
+        /* Footer */
+        .footer {
+            background: #8E24AA;
+            color: white;
+            text-align: center;
+            padding: 2rem 0;
+        }
+        
+        /* Mobile */
+        @media (max-width: 768px) {
+            .nav-menu {
+                display: none;
+            }
+            
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+            
+            .hero p {
+                font-size: 1rem;
+            }
+            
+            h2 {
+                font-size: 2.5rem;
+            }
+            
+            .contato-opcoes {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .btn {
+                width: 90%;
+                max-width: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <nav class="nav container">
+            <a href="#inicio" class="logo">Doçuras & Sabores</a>
+            <ul class="nav-menu">
+                <li><a href="#inicio">Início</a></li>
+                <li><a href="#cardapio">Cardápio</a></li>
+                <li><a href="#sobre">Sobre Nós</a></li>
+                <li><a href="#depoimentos">Depoimentos</a></li>
+                <li><a href="#contato">Contato</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <!-- Hero/Início -->
+    <section id="inicio" class="hero">
+        <div class="container">
+            <h1>Doçuras & Sabores</h1>
+            <p>Bolos, doces finos e sobremesas artesanais feitas com amor para adoçar seus momentos especiais</p>
+            <a href="#cardapio" class="btn">Ver Cardápio</a>
+        </div>
+    </section>
+
+    <!-- Cardápio -->
+    <section id="cardapio" class="cardapio">
+        <div class="container">
+            <h2>Nosso Cardápio</h2>
+            <div class="produtos-grid">
+                <div class="produto-card">
+                    <img src="https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=400&h=300&fit=crop&q=80" alt="Bolo de Chocolate">
+                    <div class="produto-info">
+                        <h3>🍫 Bolo de Chocolate</h3>
+                        <p>Delicioso bolo de chocolate com cobertura cremosa e recheio irresistível</p>
+                        <div class="preco">R$ 85,00</div>
+                    </div>
+                </div>
+                
+                <div class="produto-card">
+                    <img src="https://images.unsplash.com/photo-1614707267537-b85aaf00c4b7?w=400&h=300&fit=crop&q=80" alt="Cupcakes">
+                    <div class="produto-info">
+                        <h3>🧁 Cupcakes Red Velvet</h3>
+                        <p>Mini bolos aveludados com cobertura de cream cheese</p>
+                        <div class="preco">R$ 12,00 (unid.)</div>
+                    </div>
+                </div>
+                
+                <div class="produto-card">
+                    <img src="https://images.unsplash.com/photo-1488477181946-6428a0291777?w=400&h=300&fit=crop&q=80" alt="Pudim">
+                    <div class="produto-info">
+                        <h3>🍮 Pudim Caseiro</h3>
+                        <p>Tradicional pudim de leite condensado com calda de caramelo</p>
+                        <div class="preco">R$ 25,00</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Sobre Nós -->
+    <section id="sobre" class="sobre">
+        <div class="container">
+            <h2>Sobre Nós</h2>
+            <p>
+                Na Doçuras & Sabores, cada receita é preparada com carinho e ingredientes selecionados. 
+                Há mais de 10 anos, transformamos momentos simples em lembranças doces e especiais.
+            </p>
+            <p>
+                Nossa paixão é criar doces que não apenas satisfazem o paladar, mas também trazem 
+                alegria e conectam pessoas através do sabor único dos nossos produtos artesanais.
+            </p>
+        </div>
+    </section>
+
+    <!-- Depoimentos -->
+    <section id="depoimentos" class="depoimentos">
+        <div class="container">
+            <h2>O Que Nossos Clientes Dizem</h2>
+            <div class="depoimentos-grid">
+                <div class="depoimento">
+                    <p>"Os bolos da Doçuras & Sabores são simplesmente perfeitos! Sabor incomparável e qualidade excepcional."</p>
+                    <div class="autor">- Maria Silva</div>
+                </div>
+                
+                <div class="depoimento">
+                    <p>"Atendimento maravilhoso e doces deliciosos. Recomendo para todos os momentos especiais!"</p>
+                    <div class="autor">- João Santos</div>
+                </div>
+                
+                <div class="depoimento">
+                    <p>"Produtos frescos, saborosos e feitos com muito amor. A melhor confeitaria da região!"</p>
+                    <div class="autor">- Ana Costa</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contato -->
+    <section id="contato" class="contato">
+        <div class="container">
+            <h2>Faça Seu Pedido</h2>
+            <p>Entre em contato conosco para encomendar seus doces favoritos!</p>
+            <div class="contato-opcoes">
+                <a href="https://wa.me/5511999887766" target="_blank" class="btn btn-whatsapp">
+                    <i class="fab fa-whatsapp"></i> WhatsApp
+                </a>
+                <a href="tel:+5511999887766" class="btn btn-phone">
+                    <i class="fas fa-phone"></i> Telefone
+                </a>
+                <a href="mailto:contato@docurasesabores.com" class="btn">
+                    <i class="fas fa-envelope"></i> E-mail
+                </a>
+            </div>
+            <p style="margin-top: 2rem; color: #666;">
+                📍 Entregamos na região de São Paulo ou retirada no local
+            </p>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 Doçuras & Sabores. Todos os direitos reservados.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Smooth scroll para links internos
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Efeito hover nos cards
+        document.querySelectorAll('.produto-card').forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-8px)';
+            });
+            
+            card.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0)';
+            });
+        });
+    </script>
+</body>
+</html>
