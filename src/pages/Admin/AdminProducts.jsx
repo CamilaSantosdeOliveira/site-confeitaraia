@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
-import { 
-  Plus, 
-  Edit, 
-  Trash2, 
-  Eye, 
-  Search, 
+import toast, { Toaster } from 'react-hot-toast'
+import {
+  Plus,
+  Edit,
+  Trash2,
+  Eye,
+  Search,
   Package
 } from 'lucide-react'
 
@@ -68,56 +69,23 @@ const AdminProducts = () => {
       console.log('✅ Produtos carregados do MySQL:', transformedProducts.length)
       console.log('📋 Lista de produtos:', transformedProducts)
       console.log('📊 Categorias encontradas:', [...new Set(transformedProducts.map(p => p.category))])
-      
+
       if (transformedProducts.length === 0) {
         console.warn('⚠️ Nenhum produto encontrado no banco de dados!')
       }
-      
+
       setLoading(false)
-      
-      // 🔄 ATUALIZAR AUTOMATICAMENTE A CADA 30 SEGUNDOS (só se componente ainda estiver montado)
-      if (isMountedRef.current) {
-        timeoutRef.current = setTimeout(() => {
-          if (isMountedRef.current) {
-            fetchProducts()
-          }
-        }, 30000)
-      }
-      
+
     } catch (error) {
       console.error('❌ Erro ao carregar produtos do MySQL:', error)
-      
-      // 🔄 TENTAR NOVAMENTE EM 3 SEGUNDOS (RECONEXÃO AUTOMÁTICA - SEM ALERT)
-      if (isMountedRef.current) {
-        timeoutRef.current = setTimeout(() => {
-          if (isMountedRef.current) {
-            fetchProducts()
-          }
-        }, 3000)
-      }
-      
       setLoading(false)
     }
   }
 
-  const timeoutRef = React.useRef(null)
-  const isMountedRef = React.useRef(true)
-
-  // 🚀 CARREGAR PRODUTOS AO INICIAR
   useEffect(() => {
-    isMountedRef.current = true
     console.log('🚀 Componente AdminProducts montado')
-    // Limpar produtos antigos e buscar do banco
     setProducts([])
     fetchProducts()
-    
-    // Cleanup quando componente desmontar
-    return () => {
-      isMountedRef.current = false
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current)
-      }
-    }
   }, [])
 
   // 🔄 FUNÇÃO PARA ATUALIZAR PRODUTOS
@@ -157,7 +125,7 @@ const AdminProducts = () => {
   }
 
   const handleDeleteProduct = async (product) => {
-    if (confirm(`🗑️ Tem certeza que deseja excluir "${product.name}"?\n\nEsta ação não pode ser desfeita.`)) {
+    if (confirm(`Tem certeza que deseja excluir "${product.name}"?\n\nEsta ação não pode ser desfeita.`)) {
       try {
         const response = await fetch(`http://localhost:8000/delete_product.php`, {
           method: 'DELETE',
@@ -168,13 +136,13 @@ const AdminProducts = () => {
         })
 
         if (response.ok) {
-          alert(`✅ Produto "${product.name}" excluído com sucesso!`)
-          fetchProducts() // Recarregar lista
+          toast.success(`Produto "${product.name}" excluído com sucesso!`)
+          fetchProducts()
         } else {
           throw new Error('Erro ao excluir produto')
         }
       } catch (error) {
-        alert(`❌ Erro ao excluir produto: ${error.message}`)
+        toast.error(`Erro ao excluir produto: ${error.message}`)
       }
     }
   }
@@ -212,13 +180,13 @@ const AdminProducts = () => {
 
   const handleUpdateProduct = async () => {
     if (!selectedProduct.name || !selectedProduct.price || !selectedProduct.stock) {
-      alert('❌ Preencha os campos obrigatórios: Nome, Preço e Estoque')
+      toast.error('Preencha os campos obrigatórios: Nome, Preço e Estoque')
       return
     }
 
     try {
       setSubmitting(true)
-      
+
       const response = await fetch(`http://localhost:8000/update_product.php`, {
         method: 'PUT',
         headers: {
@@ -232,19 +200,19 @@ const AdminProducts = () => {
           category: selectedProduct.category,
           description: selectedProduct.description,
           image: selectedProduct.image,
-          tags: selectedProduct.tags
+          tags: Array.isArray(selectedProduct.tags) ? selectedProduct.tags.join(',') : selectedProduct.tags
         })
       })
 
       if (response.ok) {
-        alert('✅ Produto atualizado com sucesso!')
+        toast.success('Produto atualizado com sucesso!')
         closeEditProductModal()
-        fetchProducts() // Recarregar lista
+        fetchProducts()
       } else {
         throw new Error('Erro ao atualizar produto')
       }
     } catch (error) {
-      alert(`❌ Erro ao atualizar produto: ${error.message}`)
+      toast.error(`Erro ao atualizar produto: ${error.message}`)
     } finally {
       setSubmitting(false)
     }
@@ -260,7 +228,7 @@ const AdminProducts = () => {
 
   const createNewProduct = async () => {
     if (!newProduct.name || !newProduct.price || !newProduct.stock) {
-      alert('❌ Preencha os campos obrigatórios: Nome, Preço e Estoque')
+      toast.error('Preencha os campos obrigatórios: Nome, Preço e Estoque')
       return
     }
 
@@ -294,10 +262,8 @@ const AdminProducts = () => {
         const result = await response.json()
         console.log('✅ Produto criado com sucesso:', result)
         
-        alert('🎉 Produto criado com sucesso!')
+        toast.success('Produto criado com sucesso!')
         closeNewProductModal()
-        
-        // 🔄 Recarregar produtos
         fetchProducts()
       } else {
         const errorText = await response.text()
@@ -306,17 +272,12 @@ const AdminProducts = () => {
       }
     } catch (error) {
       console.error('❌ Erro ao criar produto:', error)
-      
-      // 🚨 MENSAGEM DE ERRO MAIS DETALHADA
-      let errorMessage = 'Erro desconhecido'
-      
-             if (error.name === 'TypeError' && error.message.includes('fetch')) {
-         errorMessage = `❌ Erro de conexão!\n\nVerifique se:\n• XAMPP está rodando (porta 8080)\n• MySQL está ativo\n• Arquivos PHP estão na pasta htdocs\n\nErro: ${error.message}`
-       } else {
-        errorMessage = `❌ Erro ao criar produto: ${error.message}`
+
+      if (error.name === 'TypeError' && error.message.includes('fetch')) {
+        toast.error('Erro de conexão! Verifique se o XAMPP está rodando e MySQL está ativo.')
+      } else {
+        toast.error(`Erro ao criar produto: ${error.message}`)
       }
-      
-      alert(errorMessage)
     } finally {
       setSubmitting(false)
     }
@@ -407,6 +368,34 @@ const AdminProducts = () => {
 
   return (
     <div className="space-y-4 sm:space-y-5 lg:space-y-6">
+      <Toaster
+        position="top-right"
+        containerStyle={{
+          zIndex: 999999,
+        }}
+        toastOptions={{
+          duration: 3000,
+          style: {
+            background: '#363636',
+            color: '#fff',
+            zIndex: 999999,
+          },
+          success: {
+            duration: 3000,
+            iconTheme: {
+              primary: '#10b981',
+              secondary: '#fff',
+            },
+          },
+          error: {
+            duration: 4000,
+            iconTheme: {
+              primary: '#ef4444',
+              secondary: '#fff',
+            },
+          },
+        }}
+      />
       {/* Header Principal - ESPAÇAMENTO AUMENTADO */}
       <div className="mb-6 sm:mb-8 lg:mb-10 pt-8 sm:pt-12 lg:pt-16 xl:pt-20">
         <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 sm:gap-6 lg:gap-8">
@@ -1020,7 +1009,7 @@ const AdminProducts = () => {
                     <input
                       type="text"
                       name="tags"
-                      value={Array.isArray(selectedProduct.tags) ? selectedProduct.tags.join(', ') : selectedProduct.tags}
+                      value={Array.isArray(selectedProduct.tags) ? selectedProduct.tags.join(',') : selectedProduct.tags}
                       onChange={handleEditInputChange}
                       className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="chocolate,bolo,doce"

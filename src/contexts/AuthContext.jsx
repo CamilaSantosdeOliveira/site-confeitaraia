@@ -1,29 +1,8 @@
 import { createContext, useContext, useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
-import api from '../services/api'
 
 const AuthContext = createContext()
-
-// Dados mockados para demonstração
-const mockUsers = [
-  {
-    id: 1,
-    name: 'Maria Silva',
-    email: 'admin@docuras.com',
-    password: 'admin123',
-    role: 'admin',
-    phone: '(11) 99999-9999'
-  },
-  {
-    id: 2,
-    name: 'João Silva',
-    email: 'joao@email.com',
-    password: '123456',
-    role: 'user',
-    phone: '(11) 88888-8888'
-  }
-]
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null)
@@ -57,46 +36,51 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       setLoading(true)
-      
-      // Limpar espaços em branco dos inputs
+
       const cleanEmail = email?.trim()
       const cleanPassword = password?.trim()
-      
-      // Usar apenas dados mockados por enquanto
-      const mockUser = mockUsers.find(u => 
-        u.email === cleanEmail && u.password === cleanPassword
-      )
-      
-      if (mockUser) {
-        const token = `mock-token-${Date.now()}`
+
+      // Tentar login no backend real
+      const response = await fetch('http://localhost:3001/api/login.php', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: cleanEmail,
+          password: cleanPassword
+        })
+      })
+
+      const data = await response.json()
+
+      if (data.success && data.token) {
         const userData = {
-          id: mockUser.id,
-          name: mockUser.name,
-          email: mockUser.email,
-          role: mockUser.role,
-          token: token
+          id: data.user.id,
+          name: data.user.name,
+          email: data.user.email,
+          role: data.user.role,
+          token: data.token
         }
-        
-        localStorage.setItem('auth-token', token)
+
+        localStorage.setItem('auth-token', data.token)
         localStorage.setItem('user-data', JSON.stringify(userData))
-        
+
         setUser(userData)
         toast.success('Login realizado com sucesso!')
-        
-        // Navegar apenas para usuários comuns (admin controla sua própria navegação)
-        if (mockUser.role !== 'admin') {
+
+        if (data.user.role !== 'admin') {
           navigate('/')
         }
         return true
+      } else {
+        toast.error(data.message || 'Email ou senha incorretos')
+        return false
       }
-      
-      // Se não encontrou usuário mockado
-      toast.error('Email ou senha incorretos')
-      return false
-      
+
     } catch (error) {
       console.error('Erro no login:', error)
-      toast.error('Erro ao fazer login')
+      toast.error('Erro ao fazer login. Verifique sua conexão.')
       return false
     } finally {
       setLoading(false)
@@ -106,50 +90,48 @@ export const AuthProvider = ({ children }) => {
   const register = async (userData) => {
     try {
       setLoading(true)
-      
-      // Simular delay de API
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      // Verificar se email já existe
-      const existingUser = mockUsers.find(u => u.email === userData.email)
-      if (existingUser) {
-        toast.error('Este email já está em uso!')
+
+      // Registrar no backend real
+      const response = await fetch('http://localhost:3001/api/register.php', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: userData.name,
+          email: userData.email,
+          password: userData.password,
+          phone: userData.phone
+        })
+      })
+
+      const data = await response.json()
+
+      if (data.success && data.token) {
+        const userInfo = {
+          id: data.user.id,
+          name: data.user.name,
+          email: data.user.email,
+          role: data.user.role,
+          phone: userData.phone
+        }
+
+        localStorage.setItem('auth-token', data.token)
+        localStorage.setItem('user-data', JSON.stringify(userInfo))
+
+        setUser(userInfo)
+        toast.success('Conta criada com sucesso!')
+        navigate('/')
+
+        return true
+      } else {
+        toast.error(data.message || 'Erro ao criar conta')
         return false
       }
-      
-      // Criar novo usuário mockado
-      const newUser = {
-        id: Date.now(),
-        name: userData.name,
-        email: userData.email,
-        password: userData.password,
-        role: 'user',
-        phone: userData.phone
-      }
-      
-      // Adicionar à lista mockada (em memória)
-      mockUsers.push(newUser)
-      
-      // Fazer login automático
-      const token = `mock-token-${Date.now()}`
-      const userInfo = {
-        id: newUser.id,
-        name: newUser.name,
-        email: newUser.email,
-        role: newUser.role,
-        phone: newUser.phone
-      }
-      
-      localStorage.setItem('auth-token', token)
-      localStorage.setItem('user-data', JSON.stringify(userInfo))
-      
-      setUser(userInfo)
-      toast.success('Conta criada com sucesso!')
-      navigate('/')
-      
-      return true
+
     } catch (error) {
-      toast.error('Erro ao criar conta')
+      console.error('Erro ao registrar:', error)
+      toast.error('Erro ao criar conta. Verifique sua conexão.')
       return false
     } finally {
       setLoading(false)

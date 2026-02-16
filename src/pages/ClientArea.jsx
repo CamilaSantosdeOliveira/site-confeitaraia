@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { User, Package, Heart, Bell, Settings, MapPin, Phone, Mail, Calendar, X } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
@@ -17,6 +17,7 @@ const ClientArea = () => {
   const [isOrderDetailsModalOpen, setIsOrderDetailsModalOpen] = useState(false)
   const [selectedOrder, setSelectedOrder] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [orders, setOrders] = useState([])
   const [userData, setUserData] = useState({
     user: null,
     profile: null,
@@ -37,81 +38,86 @@ const ClientArea = () => {
     }
   })
 
-  // Dados mockados para pedidos (ainda não implementado)
-  const mockOrders = [
-    {
-      id: 'ORD-001',
-      date: '2025-01-10',
-      status: 'delivered',
-      total: 125.50,
-      items: ['Bolo de Chocolate', 'Cupcakes de Morango'],
-      tracking: 'Entregue em 10/01/2025 às 14:30'
-    },
-    {
-      id: 'ORD-002', 
-      date: '2025-01-08',
-      status: 'preparing',
-      total: 89.00,
-      items: ['Torta de Limão', 'Doces Finos'],
-      tracking: 'Em preparação - Entrega prevista para 12/01/2025'
-    },
-    {
-      id: 'ORD-003',
-      date: '2025-01-05',
-      status: 'confirmed',
-      total: 156.75,
-      items: ['Bolo de Aniversário', 'Cupcakes Personalizados'],
-      tracking: 'Pedido confirmado - Aguardando preparação'
+  const fetchOrders = useCallback(async () => {
+    if (!user?.id) {
+      setOrders([]);
+      return;
     }
-  ]
 
-  // Carregar dados reais do usuário
-  useEffect(() => {
-    const loadUserData = async () => {
-      console.log('loadUserData chamado');
-      console.log('isAuthenticated:', isAuthenticated);
-      console.log('user:', user);
-      
-      if (!isAuthenticated || !user) {
-        console.log('Usuário não autenticado, saindo...');
+    try {
+      const response = await fetch(`http://localhost:3001/api/orders.php?user_id=${user.id}`);
+
+      if (!response.ok) {
+        setOrders([]);
         return;
       }
-      
-      try {
-        setIsLoading(true);
-        console.log('Chamando userService.getProfile()...');
-        const data = await userService.getProfile();
-        console.log('Dados recebidos:', data);
-        setUserData(data);
-        
-        // Atualizar formulário de edição com dados reais
-        const primaryAddress = data.addresses?.find(addr => addr.is_primary) || data.addresses?.[0];
-        setEditForm({
-          name: data.user?.name || '',
-          email: data.user?.email || '',
-          phone: data.profile?.phone || '',
-          address: {
-            street: primaryAddress?.street || '',
-            neighborhood: primaryAddress?.neighborhood || '',
-            city: primaryAddress?.city || '',
-            state: primaryAddress?.state || '',
-            zipCode: primaryAddress?.zip_code || ''
-          }
-        });
-      } catch (error) {
-        console.error('Erro ao carregar dados do usuário:', error);
-        // addNotification({
-        //   type: 'error',
-        //   title: 'Erro',
-        //   message: 'Erro ao carregar dados do usuário'
-        // });
-      } finally {
-        setIsLoading(false);
-      }
-    };
 
-    loadUserData();
-  }, [isAuthenticated, user, addNotification]);
+      const data = await response.json();
+
+      if (data.error) {
+        setOrders([]);
+        return;
+      }
+
+      if (Array.isArray(data)) {
+        const formattedOrders = data.map(order => ({
+          id: order.order_number || `ORD-${order.id}`,
+          orderId: order.id,
+          date: order.created_at,
+          status: order.status || 'pending',
+          total: parseFloat(order.total || 0),
+          items: order.items || [],
+          tracking: getTrackingText(order.status),
+          payment_method: order.payment_method,
+          delivery_address: order.delivery_address
+        }));
+        setOrders(formattedOrders);
+      } else {
+        setOrders([]);
+      }
+    } catch (error) {
+      setOrders([]);
+    }
+  }, [user?.id]);
+
+  const getTrackingText = (status) => {
+    switch (status) {
+      case 'delivered': return 'Pedido entregue';
+      case 'preparing': return 'Em preparação';
+      case 'confirmed': return 'Pedido confirmado - Aguardando preparação';
+      case 'pending': return 'Aguardando confirmação';
+      default: return 'Status desconhecido';
+    }
+  };
+
+  const fetchFavorites = useCallback(async () => {
+    if (!user?.id) {
+      setUserData(prev => ({ ...prev, favorites: [] }));
+      return;
+    }
+
+    try {
+      const response = await userService.getFavorites();
+      if (Array.isArray(response)) {
+        setUserData(prev => ({ ...prev, favorites: response }));
+      } else {
+        setUserData(prev => ({ ...prev, favorites: [] }));
+      }
+    } catch (error) {
+      setUserData(prev => ({ ...prev, favorites: [] }));
+    }
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !user) {
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(false);
+    fetchOrders();
+    fetchFavorites();
+  }, [isAuthenticated, user, fetchOrders, fetchFavorites]);
 
   if (!isAuthenticated) {
     return (
@@ -447,8 +453,9 @@ const ClientArea = () => {
                 </h2>
                 
                 <div className="space-y-4">
-                  {mockOrders.map((order) => (
-                    <div key={order.id} className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
+                  {orders.length > 0 ? (
+                    orders.map((order) => (
+                      <div key={order.id} className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
                       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                         <div className="flex-1">
                           <div className="flex items-center gap-4 mb-3">
@@ -464,7 +471,7 @@ const ClientArea = () => {
                               <p><strong>Total:</strong> R$ {order.total.toFixed(2)}</p>
                             </div>
                             <div>
-                              <p><strong>Itens:</strong> {order.items.join(', ')}</p>
+                              <p><strong>Itens:</strong> {order.items.length > 0 ? order.items.length + ' item(ns)' : 'Sem itens'}</p>
                               <p><strong>Status:</strong> {order.tracking}</p>
                             </div>
                           </div>
@@ -492,7 +499,17 @@ const ClientArea = () => {
                         </div>
                       </div>
                     </div>
-                  ))}
+                    ))
+                  ) : (
+                    <div className="text-center py-12 border border-gray-200 rounded-lg">
+                      <Package className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                      <h3 className="text-xl font-semibold text-gray-800 mb-2">Nenhum pedido ainda</h3>
+                      <p className="text-gray-600 mb-4">Você ainda não fez nenhum pedido.</p>
+                      <Link to="/menu" className="bg-pink-500 text-white py-2 px-6 rounded-lg hover:bg-pink-600 transition-colors">
+                        Fazer Pedido
+                      </Link>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -838,12 +855,21 @@ const ClientArea = () => {
                   <div>
                     <h3 className="text-sm font-semibold text-gray-800 mb-2">Itens do Pedido:</h3>
                     <div className="space-y-2">
-                      {selectedOrder.items.map((item, index) => (
-                        <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded-lg">
-                          <span className="text-sm">{item}</span>
-                          <span className="text-sm text-gray-600">1x</span>
-                        </div>
-                      ))}
+                      {selectedOrder.items && selectedOrder.items.length > 0 ? (
+                        selectedOrder.items.map((item, index) => (
+                          <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded-lg">
+                            <span className="text-sm">
+                              {typeof item === 'string' ? item : `Produto #${item.product_id || item.id || 'N/A'}`}
+                            </span>
+                            <div className="flex items-center gap-4">
+                              <span className="text-sm text-gray-600">{item.quantity || 1}x</span>
+                              {item.price && <span className="text-sm font-medium">R$ {parseFloat(item.price).toFixed(2)}</span>}
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-sm text-gray-500">Nenhum item registrado</p>
+                      )}
                     </div>
                   </div>
 
@@ -857,9 +883,11 @@ const ClientArea = () => {
                   <div>
                     <h3 className="text-sm font-semibold text-gray-800 mb-2">Endereço de Entrega:</h3>
                     <div className="text-sm text-gray-600">
-                      <p>Rua das Flores, 123</p>
-                      <p>Vila Madalena - Mogi das Cruzes/SP</p>
-                      <p>CEP: 08795-170</p>
+                      {selectedOrder.delivery_address ? (
+                        <p className="whitespace-pre-line">{selectedOrder.delivery_address}</p>
+                      ) : (
+                        <p className="text-gray-400">Endereço não informado</p>
+                      )}
                     </div>
                   </div>
                 </div>

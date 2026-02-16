@@ -42,8 +42,8 @@ try {
 
         // Preparar query de inserção
         $stmt = $pdo->prepare("
-            INSERT INTO products (name, price, stock, category, description, image, tags, status, sales, revenue, created_at) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, 'active', 0, 0, NOW())
+            INSERT INTO products (name, price, stock, category, description, image, tags, status, sales, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, 'active', 0, NOW())
         ");
 
         // Executar inserção
@@ -75,7 +75,6 @@ try {
                 'tags' => $input['tags'] ?? 'novo,confeitaria',
                 'status' => 'active',
                 'sales' => 0,
-                'revenue' => 0,
                 'created_at' => date('Y-m-d H:i:s')
             ]
         ], JSON_UNESCAPED_UNICODE);
@@ -114,8 +113,8 @@ try {
 
         // Inserir produtos de exemplo
         $stmt = $pdo->prepare("
-            INSERT INTO products (name, price, stock, category, description, image, tags, status, sales, revenue, created_at) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, 'active', 0, 0, NOW())
+            INSERT INTO products (name, price, stock, category, description, image, tags, status, sales, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, 'active', 0, NOW())
         ");
 
         $insertedCount = 0;

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { CreditCard, Smartphone, FileText, ArrowLeft, Lock, CheckCircle, Loader } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
+import toast, { Toaster } from 'react-hot-toast'
 import { useCart } from '../contexts/CartContextReal'
 import { useAuth } from '../contexts/AuthContext'
 import { useNotifications } from '../components/NotificationSystem'
@@ -27,6 +28,15 @@ const CheckoutWithPayment = () => {
     complement: ''
   })
 
+  const [cardData, setCardData] = useState({
+    number: '',
+    name: '',
+    expiry: '',
+    cvv: ''
+  })
+
+  const [loadingCep, setLoadingCep] = useState(false)
+
   // Calcular totais
   const subtotal = (cartItems || []).reduce((total, item) => total + (parseFloat(item.price) * item.quantity), 0)
   const deliveryFee = 0 // Pode ser calculado baseado no CEP
@@ -40,12 +50,90 @@ const CheckoutWithPayment = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cartItems?.length, navigate])
 
+  const formatCep = (value) => {
+    const cleaned = value.replace(/\D/g, '')
+    return cleaned.replace(/(\d{5})(\d{0,3})/, '$1-$2').replace(/-$/, '')
+  }
+
+  const formatCardNumber = (value) => {
+    const cleaned = value.replace(/\D/g, '')
+    return cleaned.replace(/(\d{4})(?=\d)/g, '$1 ').trim()
+  }
+
+  const formatExpiry = (value) => {
+    const cleaned = value.replace(/\D/g, '')
+    if (cleaned.length >= 2) {
+      return cleaned.replace(/(\d{2})(\d{0,2})/, '$1/$2').replace(/\/$/, '')
+    }
+    return cleaned
+  }
+
   const handleInputChange = (e) => {
     const { name, value } = e.target
-    setDeliveryAddress(prev => ({
+    if (name === 'zipCode') {
+      const formattedValue = formatCep(value)
+      setDeliveryAddress(prev => ({
+        ...prev,
+        [name]: formattedValue
+      }))
+
+      if (formattedValue.replace(/\D/g, '').length === 8) {
+        fetchAddressByCep(formattedValue.replace(/\D/g, ''))
+      }
+    } else {
+      setDeliveryAddress(prev => ({
+        ...prev,
+        [name]: value
+      }))
+    }
+  }
+
+  const handleCardInputChange = (e) => {
+    const { name, value } = e.target
+    let formattedValue = value
+
+    if (name === 'number') {
+      formattedValue = formatCardNumber(value)
+      if (formattedValue.replace(/\s/g, '').length > 16) return
+    } else if (name === 'expiry') {
+      formattedValue = formatExpiry(value)
+      if (formattedValue.replace(/\D/g, '').length > 4) return
+    } else if (name === 'cvv') {
+      formattedValue = value.replace(/\D/g, '')
+      if (formattedValue.length > 4) return
+    }
+
+    setCardData(prev => ({
       ...prev,
-      [name]: value
+      [name]: formattedValue
     }))
+  }
+
+  const fetchAddressByCep = async (cep) => {
+    setLoadingCep(true)
+    try {
+      const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`)
+      const data = await response.json()
+
+      if (data.erro) {
+        toast.error('CEP não encontrado')
+        return
+      }
+
+      setDeliveryAddress(prev => ({
+        ...prev,
+        street: data.logradouro || '',
+        neighborhood: data.bairro || '',
+        city: data.localidade || '',
+        state: data.uf || 'SP'
+      }))
+
+      toast.success('Endereço encontrado!')
+    } catch (error) {
+      toast.error('Erro ao buscar CEP')
+    } finally {
+      setLoadingCep(false)
+    }
   }
 
   const handlePayment = async () => {
@@ -78,7 +166,6 @@ const CheckoutWithPayment = () => {
         }))
       }
 
-      // Processar pagamento
       const paymentResult = await orderService.processPayment({
         method: paymentMethod,
         amount: total,
@@ -86,12 +173,10 @@ const CheckoutWithPayment = () => {
       })
 
       if (paymentResult.success) {
-        // Criar pedido no banco de dados
         try {
           const orderResult = await orderService.createOrder(orderData)
 
           if (orderResult && orderResult.success) {
-            // Salvar informações do pedido
             localStorage.setItem('last-order', JSON.stringify({
               order_number: orderResult.order_number,
               order_id: orderResult.order_id,
@@ -104,7 +189,7 @@ const CheckoutWithPayment = () => {
             setPaymentStatus('success')
             showSuccess('Pedido Confirmado', 'Seu pedido foi criado com sucesso!')
             clearCart()
-            
+
             setTimeout(() => {
               navigate('/pedido-confirmado')
             }, 2000)
@@ -112,16 +197,15 @@ const CheckoutWithPayment = () => {
             throw new Error(orderResult?.message || 'Erro ao criar pedido')
           }
         } catch (orderError) {
-          console.error('Erro ao criar pedido:', orderError)
           throw new Error(orderError.message || 'Erro ao criar pedido')
         }
       } else {
         throw new Error('Pagamento não aprovado')
       }
     } catch (error) {
-      console.error('Erro no pagamento:', error)
       setPaymentStatus('error')
-      showError('Erro no Pagamento', 'Erro ao processar pagamento. Tente novamente.')
+      toast.error(error.message || 'Erro ao processar pagamento')
+      showError('Erro no Pagamento', error.message || 'Erro ao processar pagamento. Tente novamente.')
     } finally {
       setIsProcessing(false)
     }
@@ -160,6 +244,34 @@ const CheckoutWithPayment = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-yellow-50 py-12 px-4">
+      <Toaster
+        position="top-right"
+        containerStyle={{
+          zIndex: 999999,
+        }}
+        toastOptions={{
+          duration: 3000,
+          style: {
+            background: '#363636',
+            color: '#fff',
+            zIndex: 999999,
+          },
+          success: {
+            duration: 3000,
+            iconTheme: {
+              primary: '#10b981',
+              secondary: '#fff',
+            },
+          },
+          error: {
+            duration: 4000,
+            iconTheme: {
+              primary: '#ef4444',
+              secondary: '#fff',
+            },
+          },
+        }}
+      />
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-8">
@@ -181,8 +293,23 @@ const CheckoutWithPayment = () => {
             >
               <h2 className="text-xl font-semibold text-gray-900 mb-4">Endereço de Entrega</h2>
               <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">CEP</label>
+                  <input
+                    type="text"
+                    name="zipCode"
+                    value={deliveryAddress.zipCode}
+                    onChange={handleInputChange}
+                    placeholder="00000-000"
+                    maxLength="9"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    required
+                  />
+                  {loadingCep && <p className="text-sm text-gray-500 mt-1">Buscando endereço...</p>}
+                </div>
+
+                <div className="grid grid-cols-4 gap-4">
+                  <div className="col-span-3">
                     <label className="block text-sm font-medium text-gray-700 mb-2">Rua</label>
                     <input
                       type="text"
@@ -205,6 +332,7 @@ const CheckoutWithPayment = () => {
                     />
                   </div>
                 </div>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Bairro</label>
                   <input
@@ -216,8 +344,9 @@ const CheckoutWithPayment = () => {
                     required
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
+
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="col-span-2">
                     <label className="block text-sm font-medium text-gray-700 mb-2">Cidade</label>
                     <input
                       type="text"
@@ -235,21 +364,11 @@ const CheckoutWithPayment = () => {
                       name="state"
                       value={deliveryAddress.state}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      maxLength="2"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent uppercase"
                       required
                     />
                   </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">CEP</label>
-                  <input
-                    type="text"
-                    name="zipCode"
-                    value={deliveryAddress.zipCode}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                    required
-                  />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Complemento (opcional)</label>
@@ -300,6 +419,69 @@ const CheckoutWithPayment = () => {
                   </button>
                 ))}
               </div>
+
+              {paymentMethod === 'credit' && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="mt-6 p-4 border-2 border-purple-200 rounded-lg bg-purple-50"
+                >
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Dados do Cartão</h3>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Número do Cartão</label>
+                      <input
+                        type="text"
+                        name="number"
+                        value={cardData.number}
+                        onChange={handleCardInputChange}
+                        placeholder="0000 0000 0000 0000"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Nome no Cartão</label>
+                      <input
+                        type="text"
+                        name="name"
+                        value={cardData.name}
+                        onChange={handleCardInputChange}
+                        placeholder="NOME COMPLETO"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent uppercase"
+                        required
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Validade</label>
+                        <input
+                          type="text"
+                          name="expiry"
+                          value={cardData.expiry}
+                          onChange={handleCardInputChange}
+                          placeholder="MM/AA"
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">CVV</label>
+                        <input
+                          type="text"
+                          name="cvv"
+                          value={cardData.cvv}
+                          onChange={handleCardInputChange}
+                          placeholder="000"
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                          required
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
             </motion.div>
           </div>
 

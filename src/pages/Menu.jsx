@@ -20,7 +20,7 @@ const Menu = () => {
   // Função temporária para corrigir imagem do Brigadeiro
   const fixBrigadeiroImage = async () => {
     try {
-      const response = await fetch('http://localhost:8000/force_update_brigadeiro.php')
+      const response = await fetch('http://localhost:3001/api/force_update_brigadeiro.php')
       const result = await response.json()
       logger.log('Resultado da atualização:', result)
       if (result.success) {
@@ -56,7 +56,7 @@ const Menu = () => {
       
       if (favorites.has(productId)) {
         // Remover dos favoritos
-        const response = await fetch(`http://localhost:8000/user_favorites_simple.php?product_id=${productId}`, {
+        const response = await fetch(`http://localhost:3001/api/user_favorites_simple.php?product_id=${productId}`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -73,7 +73,7 @@ const Menu = () => {
         }
       } else {
         // Adicionar aos favoritos
-        const response = await fetch('http://localhost:8000/user_favorites_simple.php', {
+        const response = await fetch('http://localhost:3001/api/user_favorites_simple.php', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -107,7 +107,7 @@ const Menu = () => {
   const loadFavorites = async () => {
     try {
       const token = localStorage.getItem('auth-token')
-      const response = await fetch('http://localhost:8000/user_favorites_simple.php', {
+      const response = await fetch('http://localhost:3001/api/user_favorites_simple.php', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'

@@ -12,7 +12,7 @@ export const CartProvider = ({ children }) => {
   const loadCart = async () => {
     try {
       setLoading(true)
-      const response = await fetch('http://localhost:8000/cart.php', {
+      const response = await fetch('http://localhost:3001/api/cart.php', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -53,7 +53,7 @@ export const CartProvider = ({ children }) => {
     try {
       setLoading(true)
       
-      const response = await fetch('http://localhost:8000/cart.php', {
+      const response = await fetch('http://localhost:3001/api/cart.php', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -109,7 +109,7 @@ export const CartProvider = ({ children }) => {
     try {
       setLoading(true)
       
-      const response = await fetch('http://localhost:8000/cart.php', {
+      const response = await fetch('http://localhost:3001/api/cart.php', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -140,7 +140,7 @@ export const CartProvider = ({ children }) => {
     try {
       setLoading(true)
       
-      const response = await fetch('http://localhost:8000/cart.php', {
+      const response = await fetch('http://localhost:3001/api/cart.php', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -173,7 +173,7 @@ export const CartProvider = ({ children }) => {
     try {
       setLoading(true)
       
-      const response = await fetch('http://localhost:8000/cart.php', {
+      const response = await fetch('http://localhost:3001/api/cart.php', {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',

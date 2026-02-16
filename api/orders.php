@@ -123,6 +123,7 @@ try {
         } while ($exists);
         
         // Preparar dados do pedido
+        $userId = $data['user_id'] ?? null;
         $customerName = $data['customer_name'] ?? 'Cliente';
         $customerEmail = $data['customer_email'] ?? '';
         $customerPhone = $data['customer_phone'] ?? '';
@@ -150,6 +151,12 @@ try {
         $placeholders = [];
         
         // Adicionar colunas opcionais se existirem
+        if (in_array('user_id', $existingColumns) && $userId !== null) {
+            $insertColumns[] = 'user_id';
+            $insertValues[] = $userId;
+            $placeholders[] = '?';
+        }
+
         if (in_array('order_number', $existingColumns)) {
             $insertColumns[] = 'order_number';
             $insertValues[] = $orderNumber;
@@ -278,11 +285,33 @@ try {
         ], JSON_UNESCAPED_UNICODE);
         
     } else {
-        // GET - Buscar todos os pedidos
-        $stmt = $pdo->prepare("SELECT * FROM orders ORDER BY created_at DESC");
-        $stmt->execute();
+        // GET - Buscar pedidos (filtrar por user_id se fornecido)
+        $userId = $_GET['user_id'] ?? null;
+
+        if ($userId) {
+            // Buscar apenas pedidos do usuário específico
+            $stmt = $pdo->prepare("SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC");
+            $stmt->execute([intval($userId)]);
+        } else {
+            // Buscar todos os pedidos (para admin)
+            $stmt = $pdo->prepare("SELECT * FROM orders ORDER BY created_at DESC");
+            $stmt->execute();
+        }
+
         $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        
+
+        // Para cada pedido, buscar os itens se existir a tabela order_items
+        foreach ($orders as &$order) {
+            try {
+                $itemStmt = $pdo->prepare("SELECT * FROM order_items WHERE order_id = ?");
+                $itemStmt->execute([$order['id']]);
+                $order['items'] = $itemStmt->fetchAll(PDO::FETCH_ASSOC);
+            } catch (PDOException $e) {
+                // Tabela order_items pode não existir
+                $order['items'] = [];
+            }
+        }
+
         // Retornar pedidos em JSON
         echo json_encode($orders, JSON_UNESCAPED_UNICODE);
     }
