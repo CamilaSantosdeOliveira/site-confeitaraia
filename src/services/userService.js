@@ -15,6 +15,15 @@ const getAuthToken = () => {
   return user.token || '';
 };
 
+const getUserId = () => {
+  try {
+    const user = JSON.parse(localStorage.getItem('user-data') || '{}');
+    return user.id || user.user_id || null;
+  } catch {
+    return null;
+  }
+};
+
 // Configurar axios com token de autenticação
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -35,7 +44,10 @@ apiClient.interceptors.request.use((config) => {
 export const userService = {
   async getProfile() {
     try {
-      const response = await apiClient.get('/user_profile.php');
+      const userId = getUserId();
+      const response = await apiClient.get(
+        `/user_profile.php${userId ? `?user_id=${encodeURIComponent(userId)}` : ''}`
+      );
       return response.data;
     } catch (error) {
       throw error;
@@ -44,7 +56,11 @@ export const userService = {
 
   async updateProfile(profileData) {
     try {
-      const response = await apiClient.put('/user_profile.php', profileData);
+      const userId = getUserId();
+      const response = await apiClient.put('/user_profile.php', {
+        ...profileData,
+        ...(userId ? { user_id: userId } : {}),
+      });
       return response.data;
     } catch (error) {
       throw error;
@@ -92,7 +108,10 @@ export const userService = {
 
   async getFavorites() {
     try {
-      const response = await apiClient.get('/user_favorites_simple.php');
+      const userId = getUserId();
+      const response = await apiClient.get(
+        `/user_favorites_simple.php${userId ? `?user_id=${encodeURIComponent(userId)}` : ''}`
+      );
       return response.data;
     } catch (error) {
       throw error;
@@ -101,8 +120,10 @@ export const userService = {
 
   async addFavorite(productId) {
     try {
+      const userId = getUserId();
       const response = await apiClient.post('/user_favorites_simple.php', {
-        product_id: productId
+        product_id: productId,
+        ...(userId ? { user_id: userId } : {})
       });
       return response.data;
     } catch (error) {
@@ -112,7 +133,10 @@ export const userService = {
 
   async removeFavorite(productId) {
     try {
-      const response = await apiClient.delete(`/user_favorites_simple.php?product_id=${productId}`);
+      const userId = getUserId();
+      const response = await apiClient.delete(
+        `/user_favorites_simple.php?product_id=${encodeURIComponent(productId)}${userId ? `&user_id=${encodeURIComponent(userId)}` : ''}`
+      );
       return response.data;
     } catch (error) {
       throw error;

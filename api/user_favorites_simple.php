@@ -94,9 +94,12 @@ if (!$user_id) {
     if ($method === 'POST') {
         $data = json_decode(file_get_contents('php://input'), true);
         $user_id = $data['user_id'] ?? null;
-    } elseif ($method === 'GET') {
-        $user_id = $_GET['user_id'] ?? null;
     }
+}
+
+// Fallback: permitir user_id via querystring para qualquer método (GET/POST/DELETE)
+if (!$user_id) {
+    $user_id = $_GET['user_id'] ?? null;
 }
 
 if (!$user_id) {

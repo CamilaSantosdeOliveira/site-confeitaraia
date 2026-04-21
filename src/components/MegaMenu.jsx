@@ -1,18 +1,58 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { ChevronDown, Cake, Heart, Star, Coffee, Gift } from 'lucide-react'
+import { productService } from '../services/api'
+import logger from '../utils/logger'
 
 const MegaMenu = () => {
   const [activeCategory, setActiveCategory] = useState(null)
+  const [categoryImages, setCategoryImages] = useState({})
 
-  const categories = [
+  const normalizeCategoryKey = (category) => {
+    const value = (category || '').toString().trim().toLowerCase()
+    if (value.includes('bolo')) return 'bolos'
+    if (value.includes('torta')) return 'tortas'
+    if (value.includes('cup')) return 'cupcakes'
+    if (value.includes('sobremesa')) return 'sobremesas'
+    if (value.includes('doce')) return 'doces'
+    return null
+  }
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadImagesFromCatalog() {
+      try {
+        const res = await productService.getAll()
+        const products = Array.isArray(res?.data) ? res.data : []
+        const next = {}
+
+        for (const p of products) {
+          const key = normalizeCategoryKey(p?.category)
+          if (!key) continue
+          if (!next[key] && p?.image) next[key] = p.image
+        }
+
+        if (!cancelled) setCategoryImages(next)
+      } catch (e) {
+        logger.warn('MegaMenu: falha ao carregar imagens do cardápio', e?.message || e)
+      }
+    }
+
+    loadImagesFromCatalog()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const categories = useMemo(() => ([
     {
       id: 'bolos',
       name: 'Bolos',
       icon: Cake,
       description: 'Bolos artesanais para todas as ocasiões',
-      image: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=200&q=80',
+      image: categoryImages.bolos || 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=200&q=80',
       items: [
         { name: 'Ver Todos os Bolos', href: '/menu?category=bolos' }
       ]
@@ -22,7 +62,7 @@ const MegaMenu = () => {
       name: 'Tortas',
       icon: Heart,
       description: 'Tortas deliciosas e tradicionais',
-      image: 'https://images.unsplash.com/photo-1565958011703-44f9829ba187?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=200&q=80',
+      image: categoryImages.tortas || 'https://images.unsplash.com/photo-1565958011703-44f9829ba187?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=200&q=80',
       items: [
         { name: 'Ver Todas as Tortas', href: '/menu?category=tortas' }
       ]
@@ -32,7 +72,7 @@ const MegaMenu = () => {
       name: 'Cupcakes',
       icon: Star,
       description: 'Cupcakes fofinhos e saborosos',
-      image: 'https://images.unsplash.com/photo-1614707267537-b85aaf00c4b7?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=200&q=80',
+      image: categoryImages.cupcakes || 'https://images.unsplash.com/photo-1576618148400-f54bed99fcfd?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=200&q=80',
       items: [
         { name: 'Ver Todos os Cupcakes', href: '/menu?category=cupcakes' }
       ]
@@ -42,7 +82,7 @@ const MegaMenu = () => {
       name: 'Doces',
       icon: Coffee,
       description: 'Doces finos e gourmet',
-      image: 'https://images.unsplash.com/photo-1586444248902-2f64eddc13df?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=200&q=80',
+      image: categoryImages.doces || 'https://images.unsplash.com/photo-1586444248902-2f64eddc13df?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=200&q=80',
       items: [
         { name: 'Ver Todos os Doces', href: '/menu?category=doces' }
       ]
@@ -52,12 +92,12 @@ const MegaMenu = () => {
       name: 'Sobremesas',
       icon: Gift,
       description: 'Sobremesas tradicionais e modernas',
-      image: 'https://images.unsplash.com/photo-1488477181946-6428a0291777?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=200&q=80',
+      image: categoryImages.sobremesas || 'https://images.unsplash.com/photo-1563805042-7684c019e1cb?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=200&q=80',
       items: [
         { name: 'Ver Todas as Sobremesas', href: '/menu?category=sobremesas' }
       ]
     }
-  ]
+  ]), [categoryImages])
 
   return (
     <div className="relative group">

@@ -12,6 +12,7 @@ import logger from '../utils/logger'
 const Menu = () => {
   const { addToCart } = useCart()
   const { user, isAuthenticated } = useAuth()
+  const isLoggedIn = isAuthenticated()
   const [selectedCategory, setSelectedCategory] = useState('todos')
   const [searchTerm, setSearchTerm] = useState('')
   const [favorites, setFavorites] = useState(new Set())
@@ -46,23 +47,31 @@ const Menu = () => {
 
   // Funções para gerenciar favoritos
   const toggleFavorite = async (productId) => {
-    if (!isAuthenticated) {
+    if (!isLoggedIn) {
       alert('Você precisa estar logado para adicionar favoritos!')
       return
     }
 
     try {
       const token = localStorage.getItem('auth-token')
+      if (!token) {
+        alert('Sessão inválida. Faça login novamente.')
+        return
+      }
+      const userId = user?.id
       
       if (favorites.has(productId)) {
         // Remover dos favoritos
-        const response = await fetch(`http://localhost:3001/api/user_favorites_simple.php?product_id=${productId}`, {
+        const response = await fetch(
+          `http://localhost:3001/api/user_favorites_simple.php?product_id=${productId}${userId ? `&user_id=${userId}` : ''}`,
+          {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           }
-        })
+          }
+        )
         
         if (response.ok) {
           setFavorites(prev => {
@@ -79,7 +88,7 @@ const Menu = () => {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({ product_id: productId })
+          body: JSON.stringify({ product_id: productId, ...(userId ? { user_id: userId } : {}) })
         })
         
         if (response.ok) {
@@ -99,15 +108,17 @@ const Menu = () => {
 
   // Carregar favoritos reais quando o usuário estiver logado
   useEffect(() => {
-    if (isAuthenticated && user) {
+    if (isLoggedIn && user) {
       loadFavorites()
     }
-  }, [isAuthenticated, user])
+  }, [isLoggedIn, user])
 
   const loadFavorites = async () => {
     try {
       const token = localStorage.getItem('auth-token')
-      const response = await fetch('http://localhost:3001/api/user_favorites_simple.php', {
+      if (!token) return
+      const userId = user?.id
+      const response = await fetch(`http://localhost:3001/api/user_favorites_simple.php${userId ? `?user_id=${userId}` : ''}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'

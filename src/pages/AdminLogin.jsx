@@ -27,7 +27,7 @@ const AdminLogin = () => {
         // Aguarda o React atualizar o estado do usuário antes de navegar
         // (evita o ProtectedRoute redirecionar para /login por ver user ainda null)
         setTimeout(() => {
-          navigate('/painel-admin-secreto', { replace: true })
+        navigate('/painel-admin-secreto', { replace: true })
         }, 100)
       } else {
         setError('Credenciais inválidas. Acesso negado.')

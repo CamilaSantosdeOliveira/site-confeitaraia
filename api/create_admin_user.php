@@ -24,10 +24,22 @@ try {
     $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
+    // Garantir que a tabela users exista
+    $pdo->exec("CREATE TABLE IF NOT EXISTS users (
+        id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        email VARCHAR(255) UNIQUE NOT NULL,
+        password VARCHAR(255) NOT NULL,
+        phone VARCHAR(50),
+        role VARCHAR(50) DEFAULT 'user',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    )");
+
     // Dados do admin
     $adminData = [
         'name' => 'Administrador',
-        'email' => 'admin@doçuras.com',
+        'email' => 'admin@docuras.com',
         'password' => password_hash('admin123', PASSWORD_DEFAULT),
         'phone' => '(11) 99999-9999',
         'role' => 'admin',

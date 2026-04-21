@@ -13,26 +13,61 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit(0);
 }
 
-// Autenticação JWT
-$headers = getallheaders();
-$token = $headers['Authorization'] ?? '';
-$token = str_replace('Bearer ', '', $token);
+function getBearerToken() {
+    $authHeader = '';
 
-$user_id = null;
-if ($token) {
-    try {
-        $decoded = validateToken($token);
-        $user_id = $decoded['user_id'];
-    } catch (Exception $e) {
-        jsonResponse(['error' => 'Token inválido'], 401);
-        return;
+    if (function_exists('getallheaders')) {
+        $headers = getallheaders();
+        $authHeader = $headers['Authorization'] ?? $headers['authorization'] ?? '';
     }
-} else {
-    jsonResponse(['error' => 'Token de autorização necessário'], 401);
-    return;
+
+    if (empty($authHeader) && isset($_SERVER['HTTP_AUTHORIZATION'])) {
+        $authHeader = $_SERVER['HTTP_AUTHORIZATION'];
+    }
+
+    if (empty($authHeader) && isset($_SERVER['REDIRECT_HTTP_AUTHORIZATION'])) {
+        $authHeader = $_SERVER['REDIRECT_HTTP_AUTHORIZATION'];
+    }
+
+    if (empty($authHeader)) {
+        return null;
+    }
+
+    $token = str_replace('Bearer ', '', $authHeader);
+    $token = trim($token);
+    return $token ?: null;
 }
 
 $method = $_SERVER['REQUEST_METHOD'];
+$user_id = null;
+
+// 1) Tentar via JWT
+$token = getBearerToken();
+if ($token) {
+    try {
+        $decoded = validateToken($token);
+        $user_id = $decoded['user_id'] ?? null;
+    } catch (Exception $e) {
+        // continua para fallback por user_id
+    }
+}
+
+// 2) Fallback: aceitar user_id via body/query (útil quando Authorization não chega ao PHP)
+if (!$user_id) {
+    if ($method === 'POST' || $method === 'PUT') {
+        $data = json_decode(file_get_contents('php://input'), true);
+        $user_id = $data['user_id'] ?? null;
+    }
+}
+
+if (!$user_id) {
+    $user_id = $_GET['user_id'] ?? null;
+}
+
+if (!$user_id) {
+    jsonResponse(['error' => 'Não autenticado'], 401);
+    return;
+}
 
 switch ($method) {
     case 'GET':

@@ -9,6 +9,7 @@ import { userService } from '../services/userService'
 
 const ClientArea = () => {
   const { user, isAuthenticated } = useAuth()
+  const isLoggedIn = isAuthenticated()
   const { addToCart } = useCart()
   const { addNotification } = useNotifications()
   const navigate = useNavigate()
@@ -109,7 +110,7 @@ const ClientArea = () => {
   }, [user?.id]);
 
   useEffect(() => {
-    if (!isAuthenticated || !user) {
+    if (!isLoggedIn || !user) {
       setIsLoading(false);
       return;
     }
@@ -117,9 +118,9 @@ const ClientArea = () => {
     setIsLoading(false);
     fetchOrders();
     fetchFavorites();
-  }, [isAuthenticated, user, fetchOrders, fetchFavorites]);
+  }, [isLoggedIn, user, fetchOrders, fetchFavorites]);
 
-  if (!isAuthenticated) {
+  if (!isLoggedIn) {
     return (
       <div className="container-custom py-12 text-center">
         <motion.div
@@ -258,6 +259,21 @@ const ClientArea = () => {
       // Recarregar dados
       const updatedData = await userService.getProfile();
       setUserData(updatedData);
+
+      // Persistir nome/email atualizados para não voltar após recarregar
+      try {
+        const existing = JSON.parse(localStorage.getItem('user-data') || '{}')
+        const nextUser = {
+          ...existing,
+          ...(updatedData?.user || {}),
+          // manter token/role se o backend não retornar
+          token: existing?.token,
+          role: existing?.role,
+        }
+        localStorage.setItem('user-data', JSON.stringify(nextUser))
+      } catch (e) {
+        // se falhar, não bloqueia o fluxo
+      }
 
       addNotification({
         type: 'success',
