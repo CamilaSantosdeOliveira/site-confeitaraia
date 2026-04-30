@@ -8,12 +8,32 @@ require_once '../backend/config.php';
 
 $pdo = getConnection();
 
+// Criar tabela user_addresses se não existir
+try {
+    $pdo->exec("CREATE TABLE IF NOT EXISTS user_addresses (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        street VARCHAR(255) NOT NULL,
+        number VARCHAR(20) NULL,
+        neighborhood VARCHAR(100) NOT NULL,
+        city VARCHAR(100) NOT NULL,
+        state VARCHAR(2) NOT NULL,
+        zip_code VARCHAR(10) NOT NULL,
+        complement VARCHAR(255) NULL,
+        is_primary TINYINT(1) DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+} catch (PDOException $e) {
+    // Ignora erro se tabela já existe
+}
+
 // Lidar com preflight OPTIONS request
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit(0);
 }
 
-// Autenticação JWT
+// Autenticação JWT ou user_id via body/query
 $headers = getallheaders();
 $token = $headers['Authorization'] ?? '';
 $token = str_replace('Bearer ', '', $token);
@@ -24,11 +44,19 @@ if ($token) {
         $decoded = validateToken($token);
         $user_id = $decoded['user_id'];
     } catch (Exception $e) {
-        jsonResponse(['error' => 'Token inválido'], 401);
-        return;
+        // continua para fallback
     }
-} else {
-    jsonResponse(['error' => 'Token de autorização necessário'], 401);
+}
+
+// Fallback: aceitar user_id via body/query
+$input = null;
+if (!$user_id) {
+    $input = json_decode(file_get_contents('php://input'), true);
+    $user_id = $input['user_id'] ?? $_GET['user_id'] ?? null;
+}
+
+if (!$user_id) {
+    jsonResponse(['error' => 'Autenticação necessária (token ou user_id)'], 401);
     return;
 }
 
@@ -55,7 +83,8 @@ switch ($method) {
         
     case 'POST':
         // Adicionar novo endereço
-        $data = json_decode(file_get_contents('php://input'), true);
+        // Usar $input já lido no início, ou ler se estiver vazio
+        $data = $input ?? json_decode(file_get_contents('php://input'), true);
         
         // Validação
         $required = ['street', 'neighborhood', 'city', 'state', 'zip_code'];
@@ -69,9 +98,12 @@ switch ($method) {
         try {
             $pdo->beginTransaction();
             
+            // Converter is_primary para inteiro (0 ou 1)
+            $is_primary = (int) ($data['is_primary'] ?? false);
+            
             // Se este endereço for marcado como principal, remover principal dos outros
-            if (isset($data['is_primary']) && $data['is_primary']) {
-                $stmt = $pdo->prepare("UPDATE user_addresses SET is_primary = FALSE WHERE user_id = ?");
+            if ($is_primary) {
+                $stmt = $pdo->prepare("UPDATE user_addresses SET is_primary = 0 WHERE user_id = ?");
                 $stmt->execute([$user_id]);
             }
             
@@ -90,7 +122,7 @@ switch ($method) {
                 $data['zip_code'],
                 $data['number'] ?? null,
                 $data['complement'] ?? null,
-                $data['is_primary'] ?? false
+                $is_primary
             ]);
             
             $address_id = $pdo->lastInsertId();
@@ -125,9 +157,14 @@ switch ($method) {
                 return;
             }
             
+            // Converter is_primary para inteiro
+            if (isset($data['is_primary'])) {
+                $data['is_primary'] = (int) $data['is_primary'];
+            }
+            
             // Se este endereço for marcado como principal, remover principal dos outros
             if (isset($data['is_primary']) && $data['is_primary']) {
-                $stmt = $pdo->prepare("UPDATE user_addresses SET is_primary = FALSE WHERE user_id = ? AND id != ?");
+                $stmt = $pdo->prepare("UPDATE user_addresses SET is_primary = 0 WHERE user_id = ? AND id != ?");
                 $stmt->execute([$user_id, $address_id]);
             }
             

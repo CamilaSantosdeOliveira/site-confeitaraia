@@ -16,7 +16,18 @@ const ClientArea = () => {
   const [activeTab, setActiveTab] = useState('profile')
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isOrderDetailsModalOpen, setIsOrderDetailsModalOpen] = useState(false)
+  const [isAddressModalOpen, setIsAddressModalOpen] = useState(false)
   const [selectedOrder, setSelectedOrder] = useState(null)
+  const [newAddress, setNewAddress] = useState({
+    street: '',
+    number: '',
+    neighborhood: '',
+    city: '',
+    state: '',
+    zip_code: '',
+    complement: '',
+    is_primary: false
+  })
   const [isLoading, setIsLoading] = useState(true)
   const [orders, setOrders] = useState([])
   const [userData, setUserData] = useState({
@@ -109,6 +120,32 @@ const ClientArea = () => {
     }
   }, [user?.id]);
 
+  // Função para buscar endereços
+  const fetchAddresses = useCallback(async () => {
+    if (!user?.id) {
+      console.log('fetchAddresses: sem user.id');
+      return;
+    }
+    
+    try {
+      console.log('fetchAddresses: buscando para user_id', user.id);
+      const response = await fetch(`http://localhost:3001/api/user_addresses.php?user_id=${user.id}`);
+      console.log('fetchAddresses: response status', response.status);
+      if (response.ok) {
+        const addresses = await response.json();
+        console.log('fetchAddresses: dados recebidos', addresses);
+        setUserData(prev => ({
+          ...prev,
+          addresses: Array.isArray(addresses) ? addresses : []
+        }));
+      } else {
+        console.error('fetchAddresses: erro na resposta', response.statusText);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar endereços:', error);
+    }
+  }, [user?.id]);
+
   useEffect(() => {
     if (!isLoggedIn || !user) {
       setIsLoading(false);
@@ -118,7 +155,8 @@ const ClientArea = () => {
     setIsLoading(false);
     fetchOrders();
     fetchFavorites();
-  }, [isLoggedIn, user, fetchOrders, fetchFavorites]);
+    fetchAddresses();
+  }, [isLoggedIn, user, fetchOrders, fetchFavorites, fetchAddresses]);
 
   if (!isLoggedIn) {
     return (
@@ -196,6 +234,180 @@ const ClientArea = () => {
   const handleCloseOrderDetailsModal = () => {
     setIsOrderDetailsModalOpen(false)
     setSelectedOrder(null)
+  }
+
+  const handleCloseAddressModal = () => {
+    setIsAddressModalOpen(false)
+    setNewAddress({
+      street: '',
+      number: '',
+      neighborhood: '',
+      city: '',
+      state: '',
+      zip_code: '',
+      complement: '',
+      is_primary: false
+    })
+  }
+
+  const handleAddressInputChange = (field, value) => {
+    setNewAddress(prev => ({
+      ...prev,
+      [field]: value
+    }))
+  }
+
+  const handleEditAddress = (address) => {
+    setNewAddress({
+      id: address.id,
+      street: address.street || '',
+      number: address.number || '',
+      neighborhood: address.neighborhood || '',
+      city: address.city || '',
+      state: address.state || '',
+      zip_code: address.zip_code || '',
+      complement: address.complement || '',
+      is_primary: address.is_primary || false
+    })
+    setIsAddressModalOpen(true)
+  }
+
+  const handleDeleteAddress = async (addressId) => {
+    if (!confirm('Tem certeza que deseja excluir este endereço?')) return
+
+    try {
+      const userId = user?.id || JSON.parse(localStorage.getItem('user-data') || '{}').id
+      
+      const response = await fetch(`http://localhost:3001/api/user_addresses.php?id=${addressId}&user_id=${userId}`, {
+        method: 'DELETE'
+      })
+
+      const data = await response.json()
+
+      if (data.error) {
+        throw new Error(data.error)
+      }
+
+      // Recarregar lista de endereços
+      await fetchAddresses()
+
+      addNotification({
+        type: 'success',
+        title: 'Endereço Excluído',
+        message: 'Endereço removido com sucesso!'
+      })
+    } catch (error) {
+      console.error('Erro ao excluir endereço:', error)
+      addNotification({
+        type: 'error',
+        title: 'Erro',
+        message: 'Erro ao excluir endereço'
+      })
+    }
+  }
+
+  const handleSetPrimaryAddress = async (addressId) => {
+    try {
+      const userId = user?.id || JSON.parse(localStorage.getItem('user-data') || '{}').id
+      
+      const response = await fetch('http://localhost:3001/api/user_addresses.php', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: addressId,
+          user_id: userId,
+          is_primary: true
+        })
+      })
+
+      const data = await response.json()
+
+      if (data.error) {
+        throw new Error(data.error)
+      }
+
+      // Recarregar lista de endereços
+      await fetchAddresses()
+
+      addNotification({
+        type: 'success',
+        title: 'Endereço Atualizado',
+        message: 'Endereço principal definido!'
+      })
+    } catch (error) {
+      console.error('Erro ao definir endereço principal:', error)
+      addNotification({
+        type: 'error',
+        title: 'Erro',
+        message: 'Erro ao atualizar endereço'
+      })
+    }
+  }
+
+  const handleSaveAddress = async () => {
+    // Validação
+    if (!newAddress.street.trim() || !newAddress.city.trim() || !newAddress.state.trim()) {
+      addNotification({
+        type: 'error',
+        title: 'Erro',
+        message: 'Rua, cidade e estado são obrigatórios!'
+      })
+      return
+    }
+
+    try {
+      const userId = user?.id || JSON.parse(localStorage.getItem('user-data') || '{}').id
+      
+      if (!userId) {
+        addNotification({
+          type: 'error',
+          title: 'Erro',
+          message: 'Usuário não identificado'
+        })
+        return
+      }
+
+      const isEditing = !!newAddress.id
+      const url = 'http://localhost:3001/api/user_addresses.php'
+      const method = isEditing ? 'PUT' : 'POST'
+      const body = isEditing 
+        ? JSON.stringify({ ...newAddress, user_id: userId })
+        : JSON.stringify({ ...newAddress, user_id: userId })
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body
+      })
+
+      const data = await response.json()
+
+      if (data.error) {
+        throw new Error(data.error)
+      }
+
+      // Recarregar lista de endereços
+      await fetchAddresses()
+
+      addNotification({
+        type: 'success',
+        title: isEditing ? 'Endereço Atualizado' : 'Endereço Adicionado',
+        message: isEditing ? 'Endereço atualizado com sucesso!' : 'Seu endereço foi cadastrado com sucesso!'
+      })
+
+      handleCloseAddressModal()
+    } catch (error) {
+      console.error('Erro ao salvar endereço:', error)
+      addNotification({
+        type: 'error',
+        title: 'Erro',
+        message: 'Erro ao salvar endereço. Tente novamente.'
+      })
+    }
   }
 
   const handleInputChange = (field, value) => {
@@ -423,6 +635,30 @@ const ClientArea = () => {
                                   CEP: {address.zip_code}
                                   {address.complement && <><br />{address.complement}</>}
                                 </p>
+                                
+                                {/* Botões de ação */}
+                                <div className="flex gap-2 mt-3">
+                                  <button
+                                    onClick={() => handleEditAddress(address)}
+                                    className="px-3 py-1 text-xs bg-blue-100 text-blue-600 rounded hover:bg-blue-200 transition-colors"
+                                  >
+                                    Editar
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteAddress(address.id)}
+                                    className="px-3 py-1 text-xs bg-red-100 text-red-600 rounded hover:bg-red-200 transition-colors"
+                                  >
+                                    Excluir
+                                  </button>
+                                  {!address.is_primary && (
+                                    <button
+                                      onClick={() => handleSetPrimaryAddress(address.id)}
+                                      className="px-3 py-1 text-xs bg-pink-100 text-pink-600 rounded hover:bg-pink-200 transition-colors"
+                                    >
+                                      Tornar Principal
+                                    </button>
+                                  )}
+                                </div>
                               </div>
                             </div>
                           </div>
@@ -435,11 +671,7 @@ const ClientArea = () => {
                       )}
                       
                       <button 
-                        onClick={() => addNotification({ 
-                          type: 'info', 
-                          title: 'Adicionar Endereço', 
-                          message: 'Funcionalidade de adicionar endereço será implementada em breve!' 
-                        })}
+                        onClick={() => setIsAddressModalOpen(true)}
                         className="w-full p-4 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-pink-300 hover:text-pink-500 transition-colors"
                       >
                         + Adicionar Novo Endereço
@@ -931,6 +1163,172 @@ const ClientArea = () => {
                       Pedir Novamente
                     </button>
                   )}
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+
+          {/* Modal de Adicionar Endereço */}
+          {isAddressModalOpen && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+              onClick={handleCloseAddressModal}
+            >
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                className="bg-white rounded-xl shadow-2xl max-w-lg w-full max-h-[80vh] overflow-y-auto"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Header do Modal */}
+                <div className="flex items-center justify-between p-4 border-b border-gray-200">
+                  <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                    <MapPin className="w-5 h-5 text-pink-500" />
+                    {newAddress.id ? 'Editar Endereço' : 'Adicionar Novo Endereço'}
+                  </h2>
+                  <button
+                    onClick={handleCloseAddressModal}
+                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    <X size={20} className="text-gray-500" />
+                  </button>
+                </div>
+
+                {/* Conteúdo do Modal */}
+                <div className="p-4 space-y-4">
+                  {/* Rua e Número */}
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Rua *
+                      </label>
+                      <input
+                        type="text"
+                        value={newAddress.street}
+                        onChange={(e) => handleAddressInputChange('street', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                        placeholder="Rua das Flores"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Número
+                      </label>
+                      <input
+                        type="text"
+                        value={newAddress.number}
+                        onChange={(e) => handleAddressInputChange('number', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                        placeholder="123"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Bairro */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Bairro
+                    </label>
+                    <input
+                      type="text"
+                      value={newAddress.neighborhood}
+                      onChange={(e) => handleAddressInputChange('neighborhood', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                      placeholder="Vila Madalena"
+                    />
+                  </div>
+
+                  {/* Cidade e Estado */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Cidade *
+                      </label>
+                      <input
+                        type="text"
+                        value={newAddress.city}
+                        onChange={(e) => handleAddressInputChange('city', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                        placeholder="São Paulo"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Estado *
+                      </label>
+                      <input
+                        type="text"
+                        value={newAddress.state}
+                        onChange={(e) => handleAddressInputChange('state', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                        placeholder="SP"
+                        maxLength="2"
+                      />
+                    </div>
+                  </div>
+
+                  {/* CEP */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      CEP
+                    </label>
+                    <input
+                      type="text"
+                      value={newAddress.zip_code}
+                      onChange={(e) => handleAddressInputChange('zip_code', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                      placeholder="01234-567"
+                    />
+                  </div>
+
+                  {/* Complemento */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Complemento
+                    </label>
+                    <input
+                      type="text"
+                      value={newAddress.complement}
+                      onChange={(e) => handleAddressInputChange('complement', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                      placeholder="Apto 45, Bloco B"
+                    />
+                  </div>
+
+                  {/* Checkbox endereço principal */}
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="is_primary"
+                      checked={newAddress.is_primary}
+                      onChange={(e) => handleAddressInputChange('is_primary', e.target.checked)}
+                      className="w-4 h-4 text-pink-500 border-gray-300 rounded focus:ring-pink-500"
+                    />
+                    <label htmlFor="is_primary" className="text-sm text-gray-700">
+                      Definir como endereço principal
+                    </label>
+                  </div>
+                </div>
+
+                {/* Footer do Modal */}
+                <div className="flex items-center justify-end gap-2 p-4 border-t border-gray-200">
+                  <button
+                    onClick={handleCloseAddressModal}
+                    className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={handleSaveAddress}
+                    className="px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 transition-colors flex items-center gap-2"
+                  >
+                    <MapPin className="w-4 h-4" />
+                    {newAddress.id ? 'Atualizar Endereço' : 'Salvar Endereço'}
+                  </button>
                 </div>
               </motion.div>
             </motion.div>

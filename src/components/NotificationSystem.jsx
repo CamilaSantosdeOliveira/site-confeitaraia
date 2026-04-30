@@ -194,7 +194,7 @@ const NotificationContainer = () => {
   }
 
   return (
-    <div className="fixed top-4 right-4 z-50 space-y-3">
+    <div className="fixed top-24 right-4 z-[9999] space-y-3 pointer-events-auto">
       <AnimatePresence>
         {notifications.map((notification) => {
           const colors = getColors(notification.type)
