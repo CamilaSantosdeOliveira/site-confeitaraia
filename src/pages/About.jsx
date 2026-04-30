@@ -34,7 +34,7 @@ const About = () => {
     {
       name: 'Maria Silva',
       role: 'Fundadora & Chef Confeiteira',
-      image: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=300&q=80',
+      image: 'https://randomuser.me/api/portraits/women/44.jpg',
       description: 'Apaixonada por confeitaria desde criança, Maria transformou sua paixão em um negócio de sucesso. Especialista em bolos artesanais e decorações únicas.',
       experience: '8 anos',
       specialties: ['Bolos Artesanais', 'Decorações', 'Gestão']
@@ -42,7 +42,7 @@ const About = () => {
     {
       name: 'João Santos',
       role: 'Chef Pâtissier',
-      image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=300&q=80',
+      image: 'https://randomuser.me/api/portraits/men/32.jpg',
       description: 'Especialista em doces finos e técnicas francesas, João traz elegância e sofisticação aos nossos produtos. Formado em culinária na França.',
       experience: '6 anos',
       specialties: ['Doces Finos', 'Técnicas Francesas', 'Chocolate']
@@ -50,7 +50,7 @@ const About = () => {
     {
       name: 'Ana Costa',
       role: 'Confeiteira Especialista',
-      image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=300&q=80',
+      image: 'https://randomuser.me/api/portraits/women/68.jpg',
       description: 'Criativa e detalhista, Ana é responsável por transformar ideias em doces únicos e memoráveis. Especialista em cupcakes e sobremesas.',
       experience: '4 anos',
       specialties: ['Cupcakes', 'Sobremesas', 'Criatividade']
@@ -239,6 +239,9 @@ const About = () => {
                   <img
                     src={member.image}
                     alt={member.name}
+                    onError={(e) => {
+                      e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(member.name)}&background=f472b6&color=fff&size=300`
+                    }}
                     className="w-40 h-40 rounded-full mx-auto object-cover shadow-lg group-hover:scale-105 transition-transform duration-300"
                   />
                   <div className="absolute -bottom-2 -right-2 bg-gradient-to-r from-pink-500 to-purple-600 text-white px-3 py-1 rounded-full text-sm font-semibold">
