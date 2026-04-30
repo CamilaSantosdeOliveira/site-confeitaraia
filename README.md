@@ -147,12 +147,10 @@ Em breve serão adicionadas imagens das principais telas do sistema.
 
 ## 📌 Melhorias futuras
 
-- Finalizar fluxo completo de checkout
-- Adicionar integração real de pagamento
-- Melhorar documentação da API
-- Criar testes automatizados
-- Publicar deploy online
 - Adicionar prints no README
+- Publicar uma versão online do projeto
+- Criar testes automatizados
+- Melhorar documentação da API
 
 ## 👩‍💻 Desenvolvedora
 
