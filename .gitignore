@@ -119,6 +119,7 @@ database.local.php
 
 # Custom restrictions
 *.md
+!README.md
 *.bat
 *.txt
 
